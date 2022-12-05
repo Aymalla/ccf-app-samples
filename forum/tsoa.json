@@ -1,4 +1,5 @@
 {
+  //"entryFile": "demo/start.ts",
   "noImplicitAdditionalProperties": "throw-on-extras",
   "controllerPathGlobs": ["src/controllers/*.ts"],
   "spec": {
