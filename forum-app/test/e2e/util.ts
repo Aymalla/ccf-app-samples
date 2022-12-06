@@ -41,8 +41,7 @@ export function getCCFSandboxCmdAndArgs(opts: CCFSandboxOpts) {
   // Most of this will disappear once CCF's build folder uses the same layout as an install.
   let CCF_SANDBOX_SCRIPT: string;
   const CCF_REPO_ROOT = path.join("..", "..", "..");
-  const CCF_BINARY_DIR =
-    process.env.CCF_BINARY_DIR || path.join(CCF_REPO_ROOT, "build");
+  const CCF_BINARY_DIR = process.env.CCF_BINARY_DIR || "/opt/ccf/bin";
   if (path.basename(CCF_BINARY_DIR) === "bin") {
     // ccf install tree
     CCF_SANDBOX_SCRIPT = path.join(CCF_BINARY_DIR, "sandbox.sh");
