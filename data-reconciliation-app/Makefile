@@ -25,7 +25,7 @@ test-docker-enclave: build-enclave ## 🧪 Test the Data Reconciliation Applicat
 # Start hosting the application using `sandbox.sh` 
 start-host: build ## 🏃 Start the CCF network using Sandbox.sh
 	@echo -e "\e[34m$@\e[0m" || true
-	@/opt/ccf/bin/sandbox.sh --js-app-bundle ./dist/ --initial-member-count 3 --initial-user-count 2 --constitution-dir ./governance/constitution
+	@/opt/ccf_virtual/bin/sandbox.sh --js-app-bundle ./dist/ --initial-member-count 3 --initial-user-count 2 --constitution-dir ./governance/constitution
 
 clean: ## 🧹 Clean the working folders created during build/demo
 	@rm -rf .venv_ccf_sandbox
@@ -34,11 +34,11 @@ clean: ## 🧹 Clean the working folders created during build/demo
 
 build-virtual: build ## 📦 Build Virtual container image from Dockerfile
 	@echo -e "\e[34m$@\e[0m" || true
-	@../build_image.sh virtual
+	@../scripts/build_image.sh virtual
 
 build-enclave: build ## 📦 Build Enclave container image from Dockerfile
 	@echo -e "\e[34m$@\e[0m" || true
-	@../build_image.sh enclave
+	@../scripts/build_image.sh enclave
 
 deploy: ## 📦 Deploy application to mCCF
 	@echo -e "\e[34m Not Implemented \e[0m" || true
