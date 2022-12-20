@@ -41,16 +41,33 @@ do
 done
 
 # validate parameters
-if [ -z $nodeAddress ]; then
+if [ -z "$nodeAddress" ]; then
     failed "You must supply --nodeAddress"
 fi
-if [ -z $certificate_dir ]; then
+if [ -z "$certificate_dir" ]; then
     failed "You must supply --certificate_dir"
 fi
 
 server="https://${nodeAddress}"
 
 echo "📂 Working directory (for certificates): ${certificate_dir}"
+
+check_eq() {
+    local test_name="$1"
+    local expected="$2"
+    local actual="$3"
+    if [ "$expected" == "$actual" ]; then
+        echo "✅ [Pass]: $test_name" 
+    else
+        echo "❌ [Fail]: $test_name: $expected expected, but got $actual."
+        exit 1
+    fi
+}
+
+cert_arg() {
+    caller="$1"
+    echo "--cacert service_cert.pem --cert ${caller}_cert.pem --key ${caller}_privk.pem"
+}
 
 only_status_code="-s -o /dev/null -w %{http_code}"
 
@@ -59,20 +76,46 @@ echo "💤 Waiting for the app frontend..."
 # There is a side effect here in the case of the sandbox as it creates the 'workspace/sandbox_common' everytime
 # it starts up. The following condition not only checks that this pem file has been created, it also checks it
 # is valid. Don't be caught out by the folder existing from a previous run.
-while [ "200" != "$(curl $server/app/commit --cacert "${certificate_dir}/service_cert.pem" $only_status_code)" ]
+while [ "200" != "$(curl "$server/app/commit" --cacert "${certificate_dir}/service_cert.pem" $only_status_code)" ]
 do
     sleep 1
 done
 
 # Only when this directory has been created (or refreshed), should we change to it
 # otherwise you can get permission issues.
-cd ${certificate_dir}
+cd "${certificate_dir}"
 
-echo "Starting Test..."
-curl -X POST $server/app/log?id=1 --cacert service_cert.pem -H "Content-Type: application/json" --data '{"msg": "Hello Data-reconciliation-app!"}' 
-curl $server/app/log?id=1 --cacert service_cert.pem
+# -------------------------- Test cases --------------------------
+echo "Test start"
 
-echo ""
-echo "Test Completed..."
-echo "OK"
+ingestUrl="$server/app/ingest";
+
+memberName="member0"
+check_eq "$memberName - data ingest succeed" "200" "$(curl $ingestUrl -X POST $(cert_arg $memberName) -H "Content-Type: application/json" --data-binary "@../../data-samples/${memberName}_data.json" $only_status_code)"
+
+memberName="member1"
+check_eq "$memberName - data ingest succeed" "200" "$(curl $ingestUrl -X POST $(cert_arg $memberName) -H "Content-Type: application/json" --data-binary "@../../data-samples/${memberName}_data.json" $only_status_code)"
+
+memberName="member2"
+check_eq "$memberName - data ingest succeed" "200" "$(curl $ingestUrl -X POST $(cert_arg $memberName) -H "Content-Type: application/json" --data-binary "@../../data-samples/${memberName}_data.json" $only_status_code)"
+
+memberName="member2"
+check_eq "$memberName - data ingest failed (data length is zero)" "400" "$(curl $ingestUrl -X POST $(cert_arg $memberName) -H "Content-Type: application/json" --data-binary "[]" $only_status_code)"
+
+memberName="member2"
+check_eq "$memberName - data ingest failed (data is null or empty)" "400" "$(curl $ingestUrl -X POST $(cert_arg $memberName) -H "Content-Type: application/json" --data-binary "" $only_status_code)"
+
+
+# printf "\n\n✅ Member 1 - read data report \n"
+# curl $server/app/report -X GET $(cert_arg "member1")
+
+# printf "\n\n✅ Member 2 - read data report \n"
+# curl $server/app/report -X GET $(cert_arg "member2")
+
+# ----------------------------------------------------
+
+printf "\n\n✅ Test Completed...\n"
 exit 0
+
+# ----------------------------------------------------
+
